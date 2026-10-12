@@ -1,0 +1,680 @@
+<!--
+1. Cambios en tu entorno de Google (Drive y Apps Script)
+Para que las firmas nuevas no se revuelvan con las de las matrículas, debes crear un "cerebro" nuevo para este nuevo formulario:
+Nueva Carpeta: Crea una nueva carpeta en Google Drive donde quieras que se guarden estas nuevas firmas (Ej: "Firmas Permisos").
+
+2. Nuevo Excel (Google Sheets): Crea un nuevo archivo de Excel en Google Drive con la pestaña CONFIG y la pestaña de control, igualito a como hiciste el primero.
+Asegúrate de poner en la hoja CONFIG el ID de la nueva carpeta.
+
+3. Nuevo Apps Script: Abre un nuevo proyecto de Google Apps Script y pega el mismo Código.gs que te di antes.
+
+4. ¿Qué cambias en el Código.gs nuevo?
+Línea 4 (ID_CONFIG_SHEET): Reemplázalo por el ID de tu nuevo Excel.
+Línea 8 (LINK_MI_WEB): Cámbialo por el nombre de tu nuevo archivo, por ejemplo: "[https://articulacioncbi.com.co/permisos.html](https://articulacioncbi.com.co/permisos.html)".
+
+5. Implementar: Haces clic en "Nueva implementación" (como aplicación web, ejecutado por ti, acceso para cualquier persona) y Google te dará una NUEVA URL larga ([https://script.google.com/macros/](https://script.google.com/macros/)...).
+-->
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Matrículas 2026 - SENA CBI</title>
+
+<style>
+  :root {
+    --bg-dark: #001529;
+    --bg-light: #003a70;
+    --sena-green: #39A900;
+    --sena-green-hover: #2d8500;
+    --card-bg: #ffffff;
+    --text-main: #1a1a1a;
+    --text-muted: #555555;
+    --blue-box: #e8f0fe;
+    --blue-border: #cce0ff;
+    --yellow-box: #fff8e1;
+    --yellow-border: #ffecb3;
+    --gray-bg: #f5f7fa;
+    --border-radius: 16px;
+  }
+
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background-color: var(--bg-dark);
+    background-image: 
+      radial-gradient(circle at 15% 50%, rgba(0, 255, 128, 0.08), transparent 30%),
+      radial-gradient(circle at 85% 30%, rgba(0, 200, 255, 0.15), transparent 30%),
+      radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 20px 20px;
+    background-attachment: fixed;
+    color: var(--text-main);
+    padding: 20px 10px;
+  }
+
+  .wrapper {
+    max-width: 700px;
+    margin: auto;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 30px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* HEADER */
+  .header-container {
+    text-align: center;
+    position: relative;
+    margin-bottom: 20px;
+  }
+  .logo { width: 90px; }
+  .header-lema {
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: 10px;
+    font-weight: 700;
+    color: #00324D;
+    text-align: right;
+    line-height: 1.2;
+    border-left: 2px solid var(--sena-green);
+    padding-left: 8px;
+  }
+  h1 { font-size: 22px; color: #00324D; margin: 10px 0 5px; font-weight: 800; }
+  .subtitulo { font-size: 14px; color: var(--text-muted); font-weight: 600; }
+
+  /* CAJAS DE INFORMACIÓN */
+  .info-box {
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .info-box.blue { background: var(--blue-box); border: 1px solid var(--blue-border); }
+  .info-box.yellow { background: var(--yellow-box); border: 1px solid var(--yellow-border); position: relative;}
+  .info-box.light { background: #f8f9fa; border: 1px solid #e9ecef; align-items: center;}
+  
+  .icon-circle {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+    flex-shrink: 0;
+  }
+  .blue .icon-circle { background: #1a73e8; color: white; }
+  .yellow .icon-circle { background: #ff9800; color: white; }
+  .light .icon-circle { background: #e8f0fe; color: #1a73e8; }
+
+  ol { margin: 10px 0 0 0; padding-left: 20px; }
+  ol li { margin-bottom: 6px; }
+  
+  .checklist { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+  .check-item { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; cursor: pointer;}
+  .doc-item { font-size: 13px; font-weight: 500; color: #333; display: flex; align-items: center; gap: 8px; margin-left: 5px;}
+
+  .custom-checkbox {
+    appearance: none;
+    width: 20px; height: 20px;
+    border: 2px solid #a0aabf;
+    border-radius: 6px;
+    outline: none; cursor: pointer;
+    position: relative;
+    transition: 0.2s;
+    flex-shrink: 0;
+  }
+  .custom-checkbox:checked { background: var(--sena-green); border-color: var(--sena-green); }
+  .custom-checkbox:checked::after {
+    content: '✔'; position: absolute; color: white;
+    font-size: 14px; top: -1px; left: 3px; font-weight: bold;
+  }
+  
+  .graphic-docs {
+    position: absolute; right: 10px; top: 40px;
+    text-align: center; opacity: 0.8;
+  }
+  .graphic-docs svg { width: 60px; height: 60px; fill: #d4a849; }
+  .graphic-docs div { font-size: 11px; font-weight: bold; color: #b28935; transform: rotate(-5deg); margin-top:-10px;}
+
+  /* INDICADOR DE PASO */
+  .step-indicator {
+    background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 12px;
+    padding: 15px; display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .step-left { display: flex; align-items: center; gap: 10px; }
+  .step-circle {
+    width: 30px; height: 30px; background: var(--sena-green); color: white;
+    border-radius: 50%; display: flex; justify-content: center; align-items: center;
+    font-weight: bold; font-size: 16px;
+  }
+  .step-title { font-weight: 700; color: #1b5e20; font-size: 15px; }
+  .step-progress { display: flex; align-items: center; gap: 5px; flex:1; max-width: 150px; justify-content: flex-end;}
+  .step-progress-dot { width: 10px; height: 10px; border-radius: 50%; background: #a5d6a7; }
+  .step-progress-dot.active { background: var(--sena-green); }
+  .step-progress-line { height: 2px; flex: 1; background: #a5d6a7; }
+  .step-labels { display: flex; justify-content: space-between; font-size: 9px; color: #2e7d32; font-weight: bold; margin-top: 4px;}
+
+  /* FORMULARIO Y INPUTS */
+  .section-title {
+    display: flex; align-items: center; gap: 8px; font-weight: 700;
+    color: #00324D; margin: 20px 0 10px; font-size: 15px;
+  }
+  .section-title svg { width: 18px; height: 18px; fill: var(--sena-green); }
+  
+  .row { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;}
+  .col { flex: 1 1 250px; position: relative; }
+  
+  .input-icon {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    width: 18px; height: 18px; fill: #788b9c;
+  }
+  
+  .col input {
+    width: 100%; padding: 12px 12px 12px 38px; border-radius: 10px;
+    border: 1px solid #cfd8dc; font-size: 14px; box-sizing: border-box;
+    transition: 0.3s; color: #333; font-weight: 500;
+  }
+  .col input:focus { border-color: var(--sena-green); outline: none; box-shadow: 0 0 0 3px rgba(57,169,0,0.1); }
+
+  /* RADIO BUTTONS */
+  .radio-group { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px; }
+  .radio-item { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+  .radio-item input[type="radio"] {
+    appearance: none; width: 20px; height: 20px; border: 2px solid #a0aabf;
+    border-radius: 50%; outline: none; cursor: pointer; position: relative;
+  }
+  .radio-item input[type="radio"]:checked { border-color: var(--sena-green); }
+  .radio-item input[type="radio"]:checked::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 10px; height: 10px; background: var(--sena-green); border-radius: 50%;
+  }
+
+  /* CANVAS DE FIRMA */
+  .canvas-wrapper {
+    position: relative;
+    border: 2px dashed #90a4ae;
+    border-radius: 12px;
+    background: #f8fafc;
+    overflow: hidden;
+    touch-action: none;
+  }
+  canvas {
+    width: 100%;
+    height: 220px;
+    display: block;
+    cursor: crosshair;
+  }
+  .canvas-placeholder {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    text-align: center; color: #90a4ae; pointer-events: none;
+  }
+  .canvas-placeholder svg { width: 30px; height: 30px; fill: #90a4ae; margin-bottom: 5px;}
+  .canvas-placeholder span { display: block; font-size: 12px; font-weight: 600; }
+  
+  .btn-ampliar {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(255,255,255,0.9); border: 1px solid #ccc; border-radius: 8px;
+    padding: 6px 10px; font-size: 11px; font-weight: bold; color: #333;
+    cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+
+  .fullscreen-mode {
+    position: fixed !important;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0, 21, 41, 0.95);
+    z-index: 99999;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    border: none; border-radius: 0; padding: 15px; box-sizing: border-box;
+  }
+  .fullscreen-mode canvas {
+    background: white; border-radius: 12px;
+    max-height: 80vh; border: 2px solid var(--sena-green);
+  }
+  .fullscreen-mode .canvas-placeholder { display: none; }
+  .btn-cerrar-fullscreen {
+    display: none; margin-top: 20px; padding: 12px 30px; font-size: 16px;
+    background: var(--sena-green); color: white; font-weight: bold; border: none; border-radius: 8px;
+  }
+  .fullscreen-mode .btn-cerrar-fullscreen { display: block; }
+  .fullscreen-mode .btn-ampliar { display: none; }
+
+  /* BOTONES DE ACCIÓN */
+  .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+  .btn {
+    width: 100%; padding: 15px; border: none; border-radius: 12px;
+    font-size: 15px; font-weight: 700; cursor: pointer; display: flex;
+    justify-content: center; align-items: center; gap: 8px; transition: 0.3s;
+    text-decoration: none; box-sizing: border-box;
+  }
+  .btn-limpiar { background: #e2e8f0; color: #475569; }
+  .btn-limpiar:hover { background: #cbd5e1; }
+  .btn-guardar { background: var(--sena-green); color: white; }
+  .btn-guardar:hover { background: var(--sena-green-hover); }
+
+  /* CAJA DE COMPARTIR ENLACE WHATSAPP */
+  .share-box {
+    background: #e8f5e9; border: 2px solid #81c784; border-radius: 12px;
+    padding: 20px; margin-top: 20px; text-align: center;
+  }
+  .share-link-input {
+    width: 100%; padding: 10px; font-size: 13px; border: 1px solid #a5d6a7;
+    border-radius: 8px; background: #fff; margin: 10px 0; text-align: center; box-sizing: border-box;
+  }
+  .btn-whatsapp { background: #25d366; color: white; margin-top: 5px; }
+  .btn-whatsapp:hover { background: #1ebe5d; }
+  .btn-copiar { background: #00324D; color: white; margin-top: 5px; }
+  .btn-copiar:hover { background: #002235; }
+
+  @keyframes pulse-green {
+    0% { box-shadow: 0 0 0 0 rgba(57, 169, 0, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(57, 169, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(57, 169, 0, 0); }
+  }
+  .btn-pulse {
+    animation: pulse-green 2s infinite;
+    background: var(--sena-green) !important;
+    color: white !important;
+    margin-top: 20px;
+  }
+
+  .hide { display: none !important; }
+  #msg { margin-top: 15px; font-weight: 700; text-align: center; color: #c62828; white-space: pre-line; }
+  .footer-legal {
+    margin-top: 25px; font-size: 11px; color: #788b9c; text-align: center;
+    display: flex; align-items: center; justify-content: center; gap: 8px; line-height: 1.4;
+  }
+  .link-adres { color: #00324D; font-weight: 700; text-decoration: underline; }
+
+  @media (max-width: 600px) {
+    .card { padding: 20px 15px; }
+    .graphic-docs { display: none; }
+  }
+</style>
+</head>
+
+<body>
+<div class="wrapper">
+  <div class="card">
+    
+    <!-- HEADER -->
+    <div class="header-container">
+      <img class="logo" src="https://articulacioncbi.com.co/logoSena.png" alt="SENA" />
+      <div class="header-lema">MÁS<br>TALENTO<br>PARA UN<br>MEJOR PAÍS</div>
+      <h1>Matrículas SEMINARIO 2026</h1>
+      <div class="subtitulo">Articulación con la Media – Palmira CBI</div>
+    </div>
+
+    <!-- CAJA 1: INFO -->
+    <div class="info-box blue" id="infoGeneral">
+      <div class="icon-circle">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+      </div>
+      <div>
+        <strong>Antes de diligenciar el formulario:</strong>
+        <ol>
+          <li>Firma del <b>Aprendiz</b> y del <b>Acudiente</b>.</li>
+          <li>Guarda cada firma.</li>
+          <li>Al finalizar, se habilita el botón para continuar al formulario.</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- CAJA 2: IMPORTANTE DOCS -->
+    <div class="info-box yellow" id="boxDocumentos">
+      <div class="icon-circle">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M12 2L1 21h22M12 6l7.53 13H4.47M11 10v4h2v-4m-2 6v2h2v-2"/></svg>
+      </div>
+      <div style="width: 100%;">
+        <strong style="color: #e65100; font-size: 15px;">IMPORTANTE:</strong><br>
+        <span style="color: #555;">Antes de continuar, debe tener en formato digital (PDF):</span>
+        
+        <div class="checklist">
+          <div class="doc-item">👤 Documento de identidad del aprendiz</div>
+          <div class="doc-item">👥 Documento de identidad del acudiente</div>
+          <div class="doc-item">📄 Certificado ADRES (<a href="https://www.adres.gov.co/consulte-su-eps" target="_blank" class="link-adres">Descargar aquí</a>)</div>
+          <div class="doc-item">📜 Registro civil de nacimiento</div>
+          <div class="doc-item">📁 Documento de custodia (si aplica. Omitir si es padre/madre)</div>
+        </div>
+      </div>
+      
+      <div class="graphic-docs">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+        <div>Ten tus<br>documentos listos<br>en PDF</div>
+      </div>
+    </div>
+
+    <!-- CAJAS DE CONFIRMACIÓN ADICIONALES -->
+    <div class="info-box light" id="boxConfirmacionDocs">
+      <label class="check-item" style="width: 100%;">
+        <input type="checkbox" id="checkDocsLista" class="custom-checkbox">
+        <span style="color: #00324D;">Confirmo que cuento con los documentos de la lista para realizar el proceso de matrícula.</span>
+      </label>
+    </div>
+
+    <div class="info-box light" id="boxConfirmacionLectura">
+      <label class="check-item" style="width: 100%;">
+        <input type="checkbox" id="checkLectura" class="custom-checkbox">
+        <span style="color: #00324D;">Confirmo que leí y entendí la información de los formatos de compromiso.</span>
+      </label>
+    </div>
+
+    <!-- INDICADOR DE PASO -->
+    <div class="step-indicator" id="pasoContenedor">
+      <div class="step-left">
+        <div class="step-circle" id="stepNum">1</div>
+        <div class="step-title" id="pasoTexto">Paso 1 de 2 – Firma del Aprendiz</div>
+      </div>
+      <div>
+        <div class="step-progress">
+          <div class="step-progress-dot active"></div>
+          <div class="step-progress-line" id="lineProgress"></div>
+          <div class="step-progress-dot" id="dotStep2"></div>
+        </div>
+        <div class="step-labels">
+          <span>Aprendiz</span>
+          <span>Acudiente</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRESENCIA DEL ACUDIENTE -->
+    <div class="info-box light" id="boxPresencia" style="display: block;">
+      <div style="display: flex; gap:10px; align-items:center; font-weight:700; color:#00324D;">
+        <svg width="20" height="20" fill="#1a73e8" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        ¿El acudiente está presente para firmar ahora?
+      </div>
+      <div class="radio-group" style="padding-left: 30px;">
+        <label class="radio-item"><input type="radio" name="presencia" value="SI" checked><span>Sí, firmará aquí mismo</span></label>
+        <label class="radio-item"><input type="radio" name="presencia" value="NO"><span>No, firmará desde su celular</span></label>
+      </div>
+    </div>
+
+    <!-- DATOS -->
+    <div class="section-title" id="labelDatos">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      Datos del Aprendiz
+    </div>
+    <div class="row">
+      <div class="col">
+        <svg class="input-icon" viewBox="0 0 24 24"><path d="M12 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4z"/></svg>
+        <input type="text" id="apellidos" placeholder="Apellidos" autocomplete="off" />
+      </div>
+      <div class="col">
+        <svg class="input-icon" viewBox="0 0 24 24"><path d="M12 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4z"/></svg>
+        <input type="text" id="nombres" placeholder="Nombres" autocomplete="off" />
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <svg class="input-icon" viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14H5v-2h7v2zm3-4H5v-2h10v2zm0-4H5V7h10v2z"/></svg>
+        <input type="number" id="documento" placeholder="Documento" autocomplete="off" />
+      </div>
+      <div class="col" id="colCorreoAprendiz">
+        <svg class="input-icon" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+        <input type="email" id="correoAprendiz" placeholder="Correo del aprendiz" autocomplete="off" />
+      </div>
+    </div>
+
+    <!-- FIRMA CANVAS -->
+    <div class="section-title" id="seccionFirmaTitulo">
+      <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+      Firma
+      <span style="margin-left: auto; font-size: 11px; color:#90a4ae; font-weight:normal;">Dibuja tu firma en el recuadro</span>
+    </div>
+    
+    <div class="canvas-wrapper" id="canvasContainer">
+      <canvas id="canvas"></canvas>
+      <div class="canvas-placeholder" id="placeholderCanvas">
+        <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/></svg>
+        <span>Firma aquí</span>
+        <span style="font-size:10px; font-weight:normal;">Usa el mouse, tu dedo o lápiz óptico</span>
+      </div>
+      <button type="button" class="btn-ampliar" id="btnAmpliar" onclick="toggleFullscreen()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#333"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+        Ampliar lienzo
+      </button>
+      <button type="button" class="btn-cerrar-fullscreen" onclick="toggleFullscreen()">✔ Listo</button>
+    </div>
+
+    <div class="btn-group" id="botonesAccion">
+      <button class="btn btn-limpiar" type="button" onclick="limpiarFirma()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+        Limpiar firma
+      </button>
+      <button class="btn btn-guardar" type="button" onclick="guardarYContinuar()" id="btnGuardar">
+        Guardar y continuar
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M5 13h11.17l-4.88 4.88c-.39.39-.39 1.03 0 1.42.39.39 1.02.39 1.41 0l6.59-6.59c.39-.39.39-1.02 0-1.41l-6.58-6.6a.9959.9959 0 0 0-1.41 0c-.39.39-.39 1.02 0 1.41L16.17 11H5c-.55 0-1 .45-1 1s.45 1 1 1z"/></svg>
+      </button>
+    </div>
+
+    <!-- CAJA NUEVA: APARECE CUANDO SE SELECCIONA ENVIAR POR WHATSAPP -->
+    <div id="cajaCompartirWhatsapp" class="share-box hide">
+      <h3 style="color: #2e7d32; margin-top:0;">📱 Enlace listo para el Acudiente</h3>
+      <p style="font-size: 13px; color: #333;">Copia este enlace o envíalo directamente por WhatsApp al acudiente:</p>
+      <input type="text" id="inputLinkToken" class="share-link-input" readonly />
+      <button class="btn btn-copiar" type="button" onclick="copiarEnlace()">📋 Copiar Enlace</button>
+      <a id="btnEnviarWhatsapp" href="#" target="_blank" class="btn btn-whatsapp">💬 Enviar por WhatsApp</a>
+    </div>
+
+    <div id="msg"></div>
+
+    <a href="#" target="_blank" id="btnFormulario" class="btn btn-pulse hide">🚀 CONTINUAR AL FORMULARIO DE MATRÍCULA</a>
+
+    <div class="footer-legal">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="#788b9c"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+      Al continuar autorizo el tratamiento de mis datos personales según la Ley 1581 de 2012.
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // 👇 PASO VITAL: PEGA AQUÍ LA URL DE TU SCRIPT
+  const URL_GOOGLE = "https://script.google.com/macros/s/AKfycbw0VThVjPaz44HHr145Qn1JpND4u4RYQSL7mbDky3YXGJy3jg9p45SpaQ1Y0qT5wil8/exec";
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const TOKEN = urlParams.get('token') || "";
+
+  let modoToken = false;
+  let pasoActual = 1;
+  let tokenProceso = "";
+  let linkProceso = "";
+
+  const EXPORT_WIDTH = 800;
+  const EXPORT_HEIGHT = 300;
+  
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+  
+  canvas.width = EXPORT_WIDTH;
+  canvas.height = EXPORT_HEIGHT;
+  ctx.lineWidth = 4; 
+  ctx.lineCap = "round"; 
+  ctx.strokeStyle = "#001529";
+
+  window.addEventListener("load", () => {
+    if (TOKEN) {
+      modoToken = true; pasoActual = 2;
+      document.getElementById("stepNum").innerText = "2";
+      document.getElementById("pasoTexto").textContent = "Firma del Acudiente (Enlace seguro)";
+      document.getElementById("labelDatos").innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> Datos del Acudiente';
+      document.getElementById("colCorreoAprendiz").classList.add("hide");
+      document.getElementById("boxPresencia").style.display = "none";
+      document.getElementById("dotStep2").classList.add("active");
+      document.getElementById("lineProgress").style.background = "var(--sena-green)";
+    }
+  });
+
+  function pos(evt){
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const cx = (evt.touches ? evt.touches[0].clientX : evt.clientX) - rect.left;
+    const cy = (evt.touches ? evt.touches[0].clientY : evt.clientY) - rect.top;
+    return { x: cx * scaleX, y: cy * scaleY };
+  }
+
+  let drawing = false;
+  function startDraw(e) { 
+    drawing = true; ctx.beginPath(); 
+    const p = pos(e); ctx.moveTo(p.x, p.y); 
+    document.getElementById("placeholderCanvas").style.display = "none";
+  }
+  function moveDraw(e) { 
+    if (!drawing) return; e.preventDefault(); 
+    const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); 
+  }
+  function stopDraw() { drawing = false; }
+
+  canvas.addEventListener("mousedown", startDraw);
+  canvas.addEventListener("mousemove", moveDraw);
+  canvas.addEventListener("mouseup", stopDraw);
+  canvas.addEventListener("mouseleave", stopDraw);
+  
+  canvas.addEventListener("touchstart", startDraw, {passive: false});
+  canvas.addEventListener("touchmove", moveDraw, {passive: false});
+  canvas.addEventListener("touchend", stopDraw);
+
+  function limpiarFirma(){ 
+    ctx.clearRect(0, 0, canvas.width, canvas.height); 
+    document.getElementById("placeholderCanvas").style.display = "block";
+    setMsg(""); 
+  }
+  
+  function canvasVacio(){ 
+    return !ctx.getImageData(0, 0, canvas.width, canvas.height).data.some(c => c !== 0); 
+  }
+  
+  function setMsg(t){ document.getElementById("msg").innerText = t; }
+
+  function toggleFullscreen() {
+    const wrapper = document.getElementById("canvasContainer");
+    wrapper.classList.toggle("fullscreen-mode");
+  }
+
+  async function enviarAGoogle(datos) {
+    document.getElementById("btnGuardar").disabled = true;
+    document.getElementById("btnGuardar").style.opacity = "0.7";
+    try {
+      const respuesta = await fetch(URL_GOOGLE, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(datos)
+      });
+      const json = await respuesta.json();
+      document.getElementById("btnGuardar").disabled = false;
+      document.getElementById("btnGuardar").style.opacity = "1";
+      return json;
+    } catch (e) {
+      document.getElementById("btnGuardar").disabled = false;
+      document.getElementById("btnGuardar").style.opacity = "1";
+      return { ok: false, error: "Error de conexión. Intente de nuevo." };
+    }
+  }
+
+  async function guardarYContinuar(){
+    if (!modoToken) {
+      if(!document.getElementById("checkDocsLista").checked) return setMsg("⚠️ Seleccione la casilla confirmando que cuenta con los documentos listados.");
+      if(!document.getElementById("checkLectura").checked) return setMsg("⚠️ Confirme que leíste la información requerida.");
+    }
+
+    const apellidos = document.getElementById("apellidos").value.trim();
+    const nombres = document.getElementById("nombres").value.trim();
+    const documento = document.getElementById("documento").value.trim();
+    const correoAprendiz = document.getElementById("correoAprendiz") ? document.getElementById("correoAprendiz").value.trim() : "";
+
+    if (!apellidos || !nombres || !documento) return setMsg("⚠️ Complete sus nombres, apellidos y documento.");
+    if (!modoToken && !correoAprendiz) return setMsg("⚠️ El correo del aprendiz es obligatorio.");
+    if (canvasVacio()) return setMsg("⚠️ Debe firmar en el recuadro blanco.");
+
+    const dataUrl = canvas.toDataURL("image/png");
+
+    if (modoToken) {
+      setMsg("⏳ Guardando firma del acudiente (esto puede tardar unos segundos)...");
+      const res = await enviarAGoogle({ action: "guardarFirmaAcudiente", token: TOKEN, dataUrl, apellidos, nombres, documento });
+      if(res.ok){
+        limpiarFirma();
+        setMsg("✅ FIRMAS COMPLETADAS CON ÉXITO.");
+        activarBotonFormulario(res.linkFormulario);
+      } else { setMsg("❌ Error: " + res.error); }
+      return;
+    }
+
+    if (pasoActual === 1) {
+      setMsg("⏳ Guardando firma del aprendiz (esto puede tardar unos segundos)...");
+      const res = await enviarAGoogle({ action: "guardarFirmaAprendiz", dataUrl, apellidos, nombres, documento, correo: correoAprendiz });
+      if(res.ok){
+        tokenProceso = res.token; linkProceso = res.link;
+        limpiarFirma();
+        const presencia = document.querySelector('input[name="presencia"]:checked').value;
+        
+        if (presencia === "NO") {
+          // Ocultar zona de firmas y mostrar la caja del enlace de WhatsApp
+          document.getElementById("canvasContainer").classList.add("hide");
+          document.getElementById("botonesAccion").classList.add("hide");
+          document.getElementById("seccionFirmaTitulo").classList.add("hide");
+          document.getElementById("boxPresencia").classList.add("hide");
+          
+          document.getElementById("inputLinkToken").value = linkProceso;
+          const textoWp = encodeURIComponent(`Hola, por favor ingresa al siguiente enlace seguro para registrar tu firma como acudiente en el proceso de matrícula SENA 2026:\n\n${linkProceso}`);
+          document.getElementById("btnEnviarWhatsapp").href = `https://api.whatsapp.com/send?text=${textoWp}`;
+          
+          document.getElementById("cajaCompartirWhatsapp").classList.remove("hide");
+          setMsg("✅ Firma del aprendiz guardada con éxito.");
+        } else {
+          pasoActual = 2;
+          document.getElementById("stepNum").innerText = "2";
+          document.getElementById("pasoTexto").textContent = "Paso 2 de 2 – Firma del Acudiente";
+          document.getElementById("labelDatos").innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> Datos del Acudiente';
+          document.getElementById("apellidos").value = ""; 
+          document.getElementById("nombres").value = ""; 
+          document.getElementById("documento").value = "";
+          document.getElementById("boxPresencia").style.display = "none";
+          document.getElementById("dotStep2").classList.add("active");
+          document.getElementById("lineProgress").style.background = "var(--sena-green)";
+          setMsg("✅ Firma guardada. Ahora firme el acudiente.");
+        }
+      } else { setMsg("❌ Error: " + res.error); }
+      return;
+    }
+
+    if (pasoActual === 2) {
+      setMsg("⏳ Guardando firma del acudiente...");
+      const res = await enviarAGoogle({ action: "guardarFirmaAcudiente", token: tokenProceso, dataUrl, apellidos, nombres, documento });
+      if(res.ok){
+        limpiarFirma();
+        setMsg("✅ FIRMAS COMPLETADAS CON ÉXITO.");
+        activarBotonFormulario(res.linkFormulario);
+      } else { setMsg("❌ Error: " + res.error); }
+    }
+  }
+
+  function copiarEnlace() {
+    const input = document.getElementById("inputLinkToken");
+    input.select();
+    input.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(input.value);
+    alert("📋 Enlace copiado al portapapeles. Ya puedes pegarlo en WhatsApp.");
+  }
+
+  function activarBotonFormulario(link) {
+    document.getElementById("btnGuardar").classList.add("hide");
+    document.querySelector(".btn-limpiar").classList.add("hide");
+    const btnForm = document.getElementById("btnFormulario");
+    btnForm.href = link;
+    btnForm.classList.remove("hide");
+  }
+
+</script>
+</body>
+</html>
